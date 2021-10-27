@@ -28,7 +28,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setup(
-    name="imagetm",
+    name="concept",
     packages=find_packages(exclude=["notebooks", "docs"]),
     version="0.0.1",
     author="Maarten P. Grootendorst",

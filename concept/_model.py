@@ -387,9 +387,9 @@ class ConceptModel:
         self.topics = topics
 
     def visualize_concepts(self,
-                           top_n: int = 12,
+                           top_n: int = 9,
                            clusters: List[int] = None,
-                           figsize: Tuple[int, int] = (20, 10)):
+                           figsize: Tuple[int, int] = (20, 15)):
         """ Visualize clusters using merged exemplars
 
         Arguments:
@@ -403,7 +403,7 @@ class ConceptModel:
         else:
             images = [self.cluster_images[index] for index in clusters]
 
-        nr_columns = 4 if len(images) >= 4 else len(images)
+        nr_columns = 3 if len(images) >= 3 else len(images)
         nr_rows = int(np.ceil(len(clusters) / nr_columns))
 
         _, axs = plt.subplots(nr_rows, nr_columns, figsize=figsize)

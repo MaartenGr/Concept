@@ -1,0 +1,38 @@
+site_name: Concept
+extra_css: [style.css]
+repo_url: https://github.com/MaartenGr/Concept
+site_url: https://maartengr.github.io/Concept/
+site_description: Concept Modeling. Topic Modeling on Images and Text
+site_author: Maarten P. Grootendorst
+use_directory_urls: false
+nav:
+  - Home: index.md
+  - API:
+      - Concept: api/concept.md
+  - Changelog: changelog.md
+plugins:
+  - mkdocstrings:
+      watch:
+        - concept
+  - search
+copyright: Copyright &copy; 2021 Maintained by <a href="https://github.com/MaartenGr">Maarten</a>.
+theme:
+  custom_dir: images/
+  name: material
+  icon:
+    logo: material/library
+  font:
+    text: Ubuntu
+    code: Ubuntu Mono
+  favicon: icon.png
+  logo: icon.png
+  feature:
+    tabs: true
+  palette:
+    primary: black
+    accent: grey
+markdown_extensions:
+  - pymdownx.highlight:
+  - pymdownx.superfences:
+  - toc:
+      permalink: true

@@ -7,12 +7,12 @@
 
 <img src="images/logo.png" width="25%" height="25%" align="right" />
 
-Concept is a technique that leverages CLIP and BERTopic-based techniques to perform Concept Modeling on images.
+**Concept** is a technique that leverages CLIP and BERTopic-based techniques to perform Concept Modeling on images.
 
 Since topics are part of conversations and text, they do not represent the context of images well. Therefore, these clusters of images are 
 referred to as 'Concepts' instead of the traditional 'Topics'.
 
-Thus, Concept Modeling takes inspiration from topic modeling techniques 
+Thus, **Concept Modeling** takes inspiration from topic modeling techniques 
 to cluster images, find common concepts and model them both visually 
 using images and textually using topic representations.
 
@@ -25,9 +25,6 @@ pip install concept
 ```
 
 ## Quick Start
-We start by extracting concepts from the well-known 20 newsgroups dataset which is comprised of english documents:
-
-
 First, we need to download and extract 25.000 images from Unsplash used in the sentence-transformers 
 example:
 
@@ -55,7 +52,7 @@ if not os.path.exists(img_folder) or len(os.listdir(img_folder)) == 0:
 images = [Image.open("photos/"+filepath) for filepath in tqdm(img_names)]
 ```
 
-Next, we only need to pass images to Concept:
+Next, we only need to pass images to **Concept**:
 
 ```python
 from concept import ConceptModel
@@ -79,7 +76,7 @@ words = vectorizer.get_feature_names()
 words = [words[index] for index in np.argpartition(vectorizer.idf_, -50_000)[-50_000:]]
 ```
 
-Then, we can pass in the resulting `words` to Concept:
+Then, we can pass in the resulting `words` to **Concept**:
 
 ```python
 from concept import ConceptModel

@@ -30,7 +30,7 @@ with open("README.md", "r") as fh:
 setup(
     name="concept",
     packages=find_packages(exclude=["notebooks", "docs"]),
-    version="0.0.1",
+    version="0.1.0",
     author="Maarten P. Grootendorst",
     author_email="maartengrootendorst@gmail.com",
     description="Topic Model Images",

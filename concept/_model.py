@@ -387,24 +387,24 @@ class ConceptModel:
         self.topics = topics
 
     def visualize_concepts(self,
-                           top_n: int = 12,
-                           clusters: List[int] = None,
-                           figsize: Tuple[int, int] = (20, 10)):
+                           top_n: int = 9,
+                           concepts: List[int] = None,
+                           figsize: Tuple[int, int] = (20, 15)):
         """ Visualize clusters using merged exemplars
 
         Arguments:
             top_n: The top_n concepts to visualize
-            clusters: The concept clusters to visualize
+            concepts: The concept clusters to visualize
             figsize: The size of the figure
         """
-        if not clusters:
+        if not concepts:
             clusters = [self.frequency.index[index] for index in range(top_n)]
             images = [self.cluster_images[index] for index in clusters]
         else:
-            images = [self.cluster_images[index] for index in clusters]
+            images = [self.cluster_images[index] for index in concepts]
 
-        nr_columns = 4 if len(images) >= 4 else len(images)
-        nr_rows = int(np.ceil(len(clusters) / nr_columns))
+        nr_columns = 3 if len(images) >= 3 else len(images)
+        nr_rows = int(np.ceil(len(concepts) / nr_columns))
 
         _, axs = plt.subplots(nr_rows, nr_columns, figsize=figsize)
         axs = axs.flatten()
@@ -412,9 +412,9 @@ class ConceptModel:
             if index < len(images):
                 ax.imshow(images[index])
                 if self.topics:
-                    title = f"Concept {clusters[index]}: {self.topics[clusters[index]]}"
+                    title = f"Concept {concepts[index]}: {self.topics[concepts[index]]}"
                 else:
-                    title = f"Concept {clusters[index]}"
+                    title = f"Concept {concepts[index]}"
                 ax.set_title(title)
             ax.axis('off')
         plt.show()

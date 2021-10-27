@@ -155,6 +155,7 @@ class ConceptModel:
         ```
         """
         self.fit_transform(images, image_names=image_names, image_embeddings=image_embeddings)
+        return self
 
     def transform(self, images, image_embeddings=None):
         """ After having fit a model, use transform to predict new instances

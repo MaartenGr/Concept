@@ -4,7 +4,7 @@
 
 # Concept
 
-<img src="images/logo.png" width="35%" height="35%" align="right" />
+<img src="images/logo.png" width="25%" height="25%" align="right" />
 
 Concept is a technique that leverages CLIP and BERTopic-based techniques to perform Concept Modeling on images.
 
@@ -64,7 +64,7 @@ concepts = concept_model.fit_transform(images)
 
 The resulting concepts can be visualized through `concept_model.visualize_concepts()`:
 
-<img src="images/concepts_without_topics.jpg" width="60%" height="60%" align="center" />
+<img src="images/concepts_without_topics.jpg" width="100%" height="100%" align="center" />
 
 However, to get the full experience, we need to label the concept clusters with topics. To do this, 
 we need to create a vocabulary: 
@@ -90,6 +90,6 @@ concepts = concept_model.fit_transform(images, docs=words)
 Again, the resulting concepts can be visualized. This time however, we can also see the generated topics 
 through `concept_model.visualize_concepts()`:
 
-<img src="images/concepts.jpg" width="60%" height="60%" align="center" />
+<img src="images/concepts.jpg" width="100%" height="100%" align="center" />
 
 **NOTE**: Use `Concept(embedding_model="clip-ViT-B-32-multilingual-v1")` to select a model that supports 50+ languages. 

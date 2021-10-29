@@ -407,14 +407,27 @@ class ConceptModel:
         nr_rows = int(np.ceil(len(concepts) / nr_columns))
 
         _, axs = plt.subplots(nr_rows, nr_columns, figsize=figsize)
-        axs = axs.flatten()
-        for index, ax in enumerate(axs):
-            if index < len(images):
-                ax.imshow(images[index])
-                if self.topics:
-                    title = f"Concept {concepts[index]}: {self.topics[concepts[index]]}"
-                else:
-                    title = f"Concept {concepts[index]}"
-                ax.set_title(title)
-            ax.axis('off')
+
+        # visualize multiple concepts
+        if len(images) > 1:
+            axs = axs.flatten()
+            for index, ax in enumerate(axs):
+                if index < len(images):
+                    ax.imshow(images[index])
+                    if self.topics:
+                        title = f"Concept {concepts[index]}: {self.topics[concepts[index]]}"
+                    else:
+                        title = f"Concept {concepts[index]}"
+                    ax.set_title(title)
+                ax.axis('off')
+
+        # visualize a single concept
+        else:
+            axs.imshow(images[0])
+            if self.topics:
+                title = f"Concept {concepts[0]}: {self.topics[concepts[0]]}"
+            else:
+                title = f"Concept {concepts[0]}"
+            axs.set_title(title)
+            axs.axis('off')
         plt.show()

@@ -390,7 +390,7 @@ class ConceptModel:
                            top_n: int = 9,
                            concepts: List[int] = None,
                            figsize: Tuple[int, int] = (20, 15)):
-        """ Visualize clusters using merged exemplars
+        """ Visualize concepts using merged exemplars
 
         Arguments:
             top_n: The top_n concepts to visualize
@@ -398,8 +398,8 @@ class ConceptModel:
             figsize: The size of the figure
         """
         if not concepts:
-            clusters = [self.frequency.index[index] for index in range(top_n)]
-            images = [self.cluster_images[index] for index in clusters]
+            concepts = [self.frequency.index[index] for index in range(top_n)]
+            images = [self.cluster_images[index] for index in concepts]
         else:
             images = [self.cluster_images[index] for index in concepts]
 

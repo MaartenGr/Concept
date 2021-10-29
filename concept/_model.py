@@ -415,7 +415,7 @@ class ConceptModel:
                 if index < len(images):
                     ax.imshow(images[index])
                     if self.topics:
-                        title = f"Concept {concepts[index]}: {self.topics[concepts[index]]}"
+                        title = f"Concept {concepts[index]}: \n{self.topics[concepts[index]]}"
                     else:
                         title = f"Concept {concepts[index]}"
                     ax.set_title(title)
@@ -425,7 +425,7 @@ class ConceptModel:
         else:
             axs.imshow(images[0])
             if self.topics:
-                title = f"Concept {concepts[0]}: {self.topics[concepts[0]]}"
+                title = f"Concept {concepts[0]}: \n{self.topics[concepts[0]]}"
             else:
                 title = f"Concept {concepts[0]}"
             axs.set_title(title)

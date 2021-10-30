@@ -377,7 +377,7 @@ class ConceptModel:
                                         docs: List[str]):
         """ Extract textual representation of concepts by comparing with documents
 
-        Args:
+        Arguments:
             docs: A list of documents from which to extract words/tokens
         """
 
@@ -396,6 +396,29 @@ class ConceptModel:
             topics[index] = ", ".join([words[index] for index in indices])
 
         self.topics = topics
+
+    def find_concepts(self, search_term: str) -> List[Tuple[int, float]]:
+        """ Based on a search term, find the top 5 related concepts
+
+        Arguments:
+            search_term: The search term to search for
+
+        Returns:
+            results: The top 5 related concepts with their similarity scores
+
+        Usage:
+
+        ```python
+        results = concept_model.find_concepts(search_term="dog")
+        ```
+        """
+        embedding = self.embedding_model.encode(search_term)
+        sim_matrix = cosine_similarity(embedding.reshape(1, -1), np.array(self.cluster_embeddings)[:, 0, :])
+        related_concepts = np.argsort(sim_matrix)[0][::-1][:5]
+        vals = list(np.sort(sim_matrix)[0][::-1][:5])
+
+        results = [(concept, val) for concept, val in zip(related_concepts, vals)]
+        return results
 
     def visualize_concepts(self,
                            top_n: int = 9,

@@ -80,6 +80,7 @@ class ConceptModel:
 
         self.frequency = None
         self.topics = None
+        self.cluster_embeddings = None
 
     def fit_transform(self,
                       images: List[str],
@@ -118,10 +119,9 @@ class ConceptModel:
 
         # Extract representative images through exemplars
         representative_images = self._extract_exemplars(image_names)
-        cluster_embeddings, exemplar_embeddings = self._extract_cluster_embeddings(image_embeddings,
-                                                                                   representative_images)
-        selected_exemplars = self._extract_exemplar_subset(cluster_embeddings,
-                                                           exemplar_embeddings,
+        exemplar_embeddings = self._extract_cluster_embeddings(image_embeddings,
+                                                               representative_images)
+        selected_exemplars = self._extract_exemplar_subset(exemplar_embeddings,
                                                            representative_images)
 
         # Create collective representation of images
@@ -129,7 +129,7 @@ class ConceptModel:
 
         # Find the best words for each concept cluster
         if docs is not None:
-            self._extract_textual_representation(cluster_embeddings, docs)
+            self._extract_textual_representation(docs)
 
         return predictions
 
@@ -297,9 +297,7 @@ class ConceptModel:
                                     image_embeddings: np.ndarray,
                                     representative_images: Mapping[str,
                                                                    Mapping[str,
-                                                                           List[int]]]) -> Tuple[List[np.ndarray],
-                                                                                                 Mapping[str,
-                                                                                                         np.ndarray]]:
+                                                                           List[int]]]) -> Mapping[str, np.ndarray]:
         """ Create a concept cluster embedding for each concept cluster by
         averaging the exemplar embeddings for each concept cluster.
 
@@ -307,8 +305,10 @@ class ConceptModel:
             image_embeddings: All image embeddings
             representative_images: The representative images per concept cluster
 
-        Returns:
+        Updates:
             cluster_embeddings: The embeddings for each concept cluster
+
+        Returns:
             exemplar_embeddings: The embeddings for each exemplar image
         """
         exemplar_embeddings = {}
@@ -321,17 +321,17 @@ class ConceptModel:
             exemplar_embeddings[label] = embeddings
             cluster_embeddings.append(cluster_embedding)
 
-        return cluster_embeddings, exemplar_embeddings
+        self.cluster_embeddings = cluster_embeddings
+
+        return exemplar_embeddings
 
     def _extract_exemplar_subset(self,
-                                 cluster_embeddings: List[np.ndarray],
                                  exemplar_embeddings: Mapping[str, np.ndarray],
                                  representative_images: Mapping[str, Mapping[str,
                                                                              List[int]]]) -> Mapping[str, List[int]]:
         """ Use MMR to filter out images in the exemplar set
 
         Arguments:
-            cluster_embeddings: The embeddings for each concept cluster
             exemplar_embeddings: The embeddings for each exemplar image
             representative_images: The representative images per concept cluster
 
@@ -339,7 +339,7 @@ class ConceptModel:
             selected_exemplars: A selection (8) of exemplar images for each concept cluster
         """
 
-        selected_exemplars = {cluster: mmr(cluster_embeddings[cluster],
+        selected_exemplars = {cluster: mmr(self.cluster_embeddings[cluster],
                                            exemplar_embeddings[cluster],
                                            representative_images[cluster]["Indices"],
                                            diversity=self.diversity,
@@ -373,8 +373,12 @@ class ConceptModel:
             image.close()
 
     def _extract_textual_representation(self,
-                                        cluster_embeddings,
                                         docs: List[str]):
+        """ Extract textual representation of concepts by comparing with documents
+
+        Args:
+            docs: A list of documents from which to extract words/tokens
+        """
 
         # Extract vocabulary from the documents
         self.vectorizer_model.fit(docs)
@@ -382,7 +386,7 @@ class ConceptModel:
 
         # Embed the documents and extract similarity between concept clusters and words
         text_embeddings = self.embedding_model.encode(words, show_progress_bar=True)
-        sim_matrix = cosine_similarity(np.array(cluster_embeddings)[:, 0, :], text_embeddings)
+        sim_matrix = cosine_similarity(np.array(self.cluster_embeddings)[:, 0, :], text_embeddings)
 
         # Extract most similar words for each concept cluster
         topics = {}

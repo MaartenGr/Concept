@@ -1,3 +1,4 @@
+import joblib
 import hdbscan
 import numpy as np
 import pandas as pd
@@ -441,3 +442,35 @@ class ConceptModel:
             axs.set_title(title)
             axs.axis('off')
         plt.show()
+
+    def save(self,
+             path: str) -> None:
+        """ Saves the model to the specified path
+
+        Arguments:
+            path: the location and name of the file you want to save
+
+        Usage:
+        ```python
+        concept_model.save("my_model")
+        ```
+        """
+        with open(path, 'wb') as file:
+            joblib.dump(self, file)
+
+    @classmethod
+    def load(cls,
+             path: str):
+        """ Loads the model from the specified path
+
+        Arguments:
+            path: the location and name of the ConceptModel file you want to load
+
+        Usage:
+        ```python
+        ConceptModel.load("my_model")
+        ```
+        """
+        with open(path, 'rb') as file:
+            concept_model = joblib.load(file)
+            return concept_model

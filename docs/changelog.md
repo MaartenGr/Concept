@@ -1,3 +1,11 @@
+## **Version 0.1.1**
+*Release date:  31 October, 2021*
+
+* Fix RAM issues
+* Update documentation
+* Add `ftfy` dependency
+* Fix `visualize_concepts`
+
 ## **Version 0.1.0**
 *Release date:  27 October, 2021*
 

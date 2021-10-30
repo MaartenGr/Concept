@@ -82,14 +82,14 @@ class ConceptModel:
         self.topics = None
 
     def fit_transform(self,
-                      images: List[Image.Image],
+                      images: List[str],
                       docs: List[str] = None,
                       image_names: List[str] = None,
                       image_embeddings: np.ndarray = None) -> List[int]:
         """ Fit the model on a collection of images and return concepts
 
         Arguments:
-            images: A list of images to fit the model on
+            images: A list of paths to each image
             docs: The documents from which to extract textual concept representation
             image_names: The names of the images for easier
                          reading of concept clusters
@@ -134,13 +134,13 @@ class ConceptModel:
         return predictions
 
     def fit(self,
-            images: List[Image.Image],
+            images: List[str],
             image_names: List[str] = None,
             image_embeddings: np.ndarray = None):
         """ Fit the model on a collection of images and return concepts
 
         Arguments:
-            images: A list of images to fit the model on
+            images: A list of paths to each image
             image_names: The names of the images for easier
                          reading of concept clusters
             image_embeddings: Pre-trained image embeddings to use
@@ -182,7 +182,7 @@ class ConceptModel:
         return predictions
 
     def _embed_images(self,
-                      images: List[Image.Image]) -> np.ndarray:
+                      images: List[str]) -> np.ndarray:
         """ Embed the images
 
         Not entirely sure why but the RAM ramps up
@@ -192,14 +192,14 @@ class ConceptModel:
         images.
 
         Arguments:
-            images: A list of images
+            images: A list of paths to each image
 
         Returns:
             embeddings: The image embeddings
         """
         # Prepare images
         batch_size = 64
-        images_to_embed = [image.copy() for image in images]
+        images_to_embed = [Image.open(filepath) for filepath in images]
         nr_iterations = int(np.ceil(len(images_to_embed) / batch_size))
 
         # Embed images per batch
@@ -349,15 +349,17 @@ class ConceptModel:
         return selected_exemplars
 
     def _cluster_representation(self,
-                                images: List[Image.Image],
+                                images: List[str],
                                 selected_exemplars: Mapping[str, List[int]]):
         """ Cluster exemplars into a single image per concept cluster
 
         Arguments:
-            images: A list of images
+            images: A list of paths to each image
             selected_exemplars: A selection of exemplar images for each concept cluster
         """
-        sliced_exemplars = {cluster: [[images[j]
+        pil_images = [Image.open(filepath) for filepath in images]
+
+        sliced_exemplars = {cluster: [[pil_images[j]
                                        for j in selected_exemplars[cluster][i:i + 3]]
                                       for i in range(0, len(selected_exemplars[cluster]), 3)]
                             for cluster in self.cluster_labels[1:]}
@@ -365,6 +367,10 @@ class ConceptModel:
         cluster_images = {cluster: get_concat_tile_resize(sliced_exemplars[cluster])
                           for cluster in self.cluster_labels[1:]}
         self.cluster_images = cluster_images
+
+        # Properly close images
+        for image in pil_images:
+            image.close()
 
     def _extract_textual_representation(self,
                                         cluster_embeddings,

@@ -4,7 +4,8 @@
 * Fix RAM issues
 * Update documentation
 * Add `ftfy` dependency
-* Fix `visualize_concepts`
+* Fix `.visualize_concepts`
+* Added `.search_concepts`
 
 ## **Version 0.1.0**
 *Release date:  27 October, 2021*

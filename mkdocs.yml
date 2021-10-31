@@ -7,6 +7,7 @@ site_author: Maarten P. Grootendorst
 use_directory_urls: false
 nav:
   - Home: index.md
+  - Algorithm: algorithm/algorithm.md
   - API:
       - Concept: api/concept.md
   - Changelog: changelog.md

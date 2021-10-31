@@ -2,6 +2,7 @@
 [![PyPI - PyPi](https://img.shields.io/pypi/v/Concept)](https://pypi.org/project/concept/)
 [![docs](https://img.shields.io/badge/docs-Passing-green.svg)](https://maartengr.github.io/concept/)
 [![PyPI - License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/MaartenGr/concept/blob/master/LICENSE)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1XHwQPT2itZXu1HayvGoj60-xAXxg9mqe?usp=sharing)
 
 # Concept
 

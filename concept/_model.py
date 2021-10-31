@@ -440,7 +440,7 @@ class ConceptModel:
         nr_columns = 3 if len(images) >= 3 else len(images)
         nr_rows = int(np.ceil(len(concepts) / nr_columns))
 
-        _, axs = plt.subplots(nr_rows, nr_columns, figsize=figsize)
+        fig, axs = plt.subplots(nr_rows, nr_columns, figsize=figsize)
 
         # visualize multiple concepts
         if len(images) > 1:
@@ -464,7 +464,7 @@ class ConceptModel:
                 title = f"Concept {concepts[0]}"
             axs.set_title(title)
             axs.axis('off')
-        plt.show()
+        return fig
 
     def save(self,
              path: str) -> None:

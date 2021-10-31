@@ -73,7 +73,7 @@ import nltk
 nltk.download("wordnet")
 from nltk.corpus import wordnet as wn
 
-all_nouns = [word for synset in wn.all_synsets('n') for word in synset.lemma_names()]
+all_nouns = [word for synset in wn.all_synsets('n') for word in synset.lemma_names() if "_" not in word]
 selected_nouns = random.sample(all_nouns, 50_000)
 ```
 

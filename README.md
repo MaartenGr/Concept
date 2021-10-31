@@ -91,4 +91,31 @@ through `concept_model.visualize_concepts()`:
 
 <img src="images/concepts.jpg" width="100%" height="100%" align="center" />
 
-**NOTE**: Use `Concept(embedding_model="clip-ViT-B-32-multilingual-v1")` to select a model that supports 50+ languages. 
+**NOTE**: Use `Concept(embedding_model="clip-ViT-B-32-multilingual-v1")` to select a model that supports 50+ languages.
+
+## Search Concepts
+We can quickly search for specific concepts by embedding a search term and finding the cluster embeddings 
+that best represent them. As an example, let us search for the term `beach` and see what we can find. 
+To do this, we simply run the following:
+
+```python
+>>> concept_model.find_concepts("beach")
+[(100, 0.277577825349102),
+ (53, 0.27431058773894657),
+ (95, 0.25973751319723837),
+ (77, 0.2560122597417548),
+ (97, 0.25361988261846297)]
+```
+
+Each tuple contains two values, the first is the concept cluster and the second the similarity to the 
+search term. The top 5 similar topics are returned. 
+
+Now, let us visualize those concepts to see how well the search function works:
+
+```python
+concept_model.visualize_concepts(concepts=[100, 53, 95, 77, 97])
+``` 
+
+<img src="images/search.jpg" width="100%" height="100%" align="center" />
+
+ 

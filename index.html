@@ -279,22 +279,37 @@
   
   
   
+    <li class="md-nav__item">
+      <a href="algorithm/algorithm.html" class="md-nav__link">
+        Algorithm
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
     
     <li class="md-nav__item md-nav__item--nested">
       
       
-        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" >
       
       
       
       
-        <label class="md-nav__link" for="__nav_2">
+        <label class="md-nav__link" for="__nav_3">
           API
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" aria-label="API" data-md-level="1">
-        <label class="md-nav__title" for="__nav_2">
+        <label class="md-nav__title" for="__nav_3">
           <span class="md-nav__icon md-icon"></span>
           API
         </label>
@@ -410,11 +425,10 @@ using images and textually using topic representations.</p>
 <p>First, we need to download and extract 25.000 images from Unsplash used in the sentence-transformers 
 example:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">zipfile</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
 <span class="kn">from</span> <span class="nn">sentence_transformers</span> <span class="kn">import</span> <span class="n">util</span>
-
 
 <span class="c1"># 25k images from Unsplash</span>
 <span class="n">img_folder</span> <span class="o">=</span> <span class="s1">&#39;photos/&#39;</span>
@@ -429,29 +443,31 @@ example:</p>
     <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">photo_filename</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">zf</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">member</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">zf</span><span class="o">.</span><span class="n">infolist</span><span class="p">(),</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;Extracting&#39;</span><span class="p">):</span>
             <span class="n">zf</span><span class="o">.</span><span class="n">extract</span><span class="p">(</span><span class="n">member</span><span class="p">,</span> <span class="n">img_folder</span><span class="p">)</span>
-<span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;photos/&quot;</span><span class="o">+</span><span class="n">filepath</span><span class="p">)</span> <span class="k">for</span> <span class="n">filepath</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">img_names</span><span class="p">)]</span>
+<span class="n">img_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s1">&#39;photos/*.jpg&#39;</span><span class="p">))</span>
 </code></pre></div>
 <p>Next, we only need to pass images to <strong>Concept</strong>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">concept</span> <span class="kn">import</span> <span class="n">ConceptModel</span>
 <span class="n">concept_model</span> <span class="o">=</span> <span class="n">ConceptModel</span><span class="p">()</span>
-<span class="n">concepts</span> <span class="o">=</span> <span class="n">concept_model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
+<span class="n">concepts</span> <span class="o">=</span> <span class="n">concept_model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">img_names</span><span class="p">)</span>
 </code></pre></div>
 <p>The resulting concepts can be visualized through <code>concept_model.visualize_concepts()</code>:</p>
 <p><img src="concepts_without_topics.jpg" width="100%" height="100%" align="center" /></p>
 <p>However, to get the full experience, we need to label the concept clusters with topics. To do this, 
-we need to create a vocabulary: </p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">fetch_20newsgroups</span>
-<span class="kn">from</span> <span class="nn">sklearn.feature_extraction.text</span> <span class="kn">import</span> <span class="n">TfidfVectorizer</span>
-<span class="n">docs</span> <span class="o">=</span> <span class="n">fetch_20newsgroups</span><span class="p">(</span><span class="n">subset</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span>  <span class="n">remove</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;headers&#39;</span><span class="p">,</span> <span class="s1">&#39;footers&#39;</span><span class="p">,</span> <span class="s1">&#39;quotes&#39;</span><span class="p">))[</span><span class="s1">&#39;data&#39;</span><span class="p">]</span>
-<span class="n">vectorizer</span> <span class="o">=</span> <span class="n">TfidfVectorizer</span><span class="p">(</span><span class="n">ngram_range</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
-<span class="n">words</span> <span class="o">=</span> <span class="n">vectorizer</span><span class="o">.</span><span class="n">get_feature_names</span><span class="p">()</span>
-<span class="n">words</span> <span class="o">=</span> <span class="p">[</span><span class="n">words</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">argpartition</span><span class="p">(</span><span class="n">vectorizer</span><span class="o">.</span><span class="n">idf_</span><span class="p">,</span> <span class="o">-</span><span class="mi">50_000</span><span class="p">)[</span><span class="o">-</span><span class="mi">50_000</span><span class="p">:]]</span>
+we need to create a vocabulary. We are going to feed our model with 50.000 nouns from the English 
+vocabulary: </p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">nltk</span>
+<span class="n">nltk</span><span class="o">.</span><span class="n">download</span><span class="p">(</span><span class="s2">&quot;wordnet&quot;</span><span class="p">)</span>
+<span class="kn">from</span> <span class="nn">nltk.corpus</span> <span class="kn">import</span> <span class="n">wordnet</span> <span class="k">as</span> <span class="n">wn</span>
+
+<span class="n">all_nouns</span> <span class="o">=</span> <span class="p">[</span><span class="n">word</span> <span class="k">for</span> <span class="n">synset</span> <span class="ow">in</span> <span class="n">wn</span><span class="o">.</span><span class="n">all_synsets</span><span class="p">(</span><span class="s1">&#39;n&#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">synset</span><span class="o">.</span><span class="n">lemma_names</span><span class="p">()]</span>
+<span class="n">selected_nouns</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">all_nouns</span><span class="p">,</span> <span class="mi">50_000</span><span class="p">)</span>
 </code></pre></div>
-<p>Then, we can pass in the resulting <code>words</code> to <strong>Concept</strong>:</p>
+<p>Then, we can pass in the resulting <code>selected_nouns</code> to <strong>Concept</strong>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">concept</span> <span class="kn">import</span> <span class="n">ConceptModel</span>
 
 <span class="n">concept_model</span> <span class="o">=</span> <span class="n">ConceptModel</span><span class="p">()</span>
-<span class="n">concepts</span> <span class="o">=</span> <span class="n">concept_model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="n">docs</span><span class="o">=</span><span class="n">words</span><span class="p">)</span>
+<span class="n">concepts</span> <span class="o">=</span> <span class="n">concept_model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">img_names</span><span class="p">,</span> <span class="n">docs</span><span class="o">=</span><span class="n">selected_nouns</span><span class="p">)</span>
 </code></pre></div>
 <p>Again, the resulting concepts can be visualized. This time however, we can also see the generated topics 
 through <code>concept_model.visualize_concepts()</code>:</p>
@@ -477,13 +493,13 @@ through <code>concept_model.visualize_concepts()</code>:</p>
       
       
         
-        <a href="api/concept.html" class="md-footer__link md-footer__link--next" aria-label="Next: Concept" rel="next">
+        <a href="algorithm/algorithm.html" class="md-footer__link md-footer__link--next" aria-label="Next: Algorithm" rel="next">
           <div class="md-footer__title">
             <div class="md-ellipsis">
               <span class="md-footer__direction">
                 Next
               </span>
-              Concept
+              Algorithm
             </div>
           </div>
           <div class="md-footer__button md-icon">

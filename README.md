@@ -2,6 +2,7 @@
 [![PyPI - PyPi](https://img.shields.io/pypi/v/Concept)](https://pypi.org/project/concept/)
 [![docs](https://img.shields.io/badge/docs-Passing-green.svg)](https://maartengr.github.io/concept/)
 [![PyPI - License](https://img.shields.io/badge/license-MIT-green.svg)](https://github.com/MaartenGr/concept/blob/master/LICENSE)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1XHwQPT2itZXu1HayvGoj60-xAXxg9mqe?usp=sharing)
 
 # Concept
 
@@ -30,11 +31,10 @@ example:
 
 ```python
 import os
+import glob
 import zipfile
 from tqdm import tqdm
-from PIL import Image
 from sentence_transformers import util
-
 
 # 25k images from Unsplash
 img_folder = 'photos/'
@@ -49,7 +49,7 @@ if not os.path.exists(img_folder) or len(os.listdir(img_folder)) == 0:
     with zipfile.ZipFile(photo_filename, 'r') as zf:
         for member in tqdm(zf.infolist(), desc='Extracting'):
             zf.extract(member, img_folder)
-images = [Image.open("photos/"+filepath) for filepath in tqdm(img_names)]
+img_names = list(glob.glob('photos/*.jpg'))
 ```
 
 Next, we only need to pass images to **Concept**:
@@ -57,7 +57,7 @@ Next, we only need to pass images to **Concept**:
 ```python
 from concept import ConceptModel
 concept_model = ConceptModel()
-concepts = concept_model.fit_transform(images)
+concepts = concept_model.fit_transform(img_names)
 ```
 
 The resulting concepts can be visualized through `concept_model.visualize_concepts()`:
@@ -65,24 +65,26 @@ The resulting concepts can be visualized through `concept_model.visualize_concep
 <img src="images/concepts_without_topics.jpg" width="100%" height="100%" align="center" />
 
 However, to get the full experience, we need to label the concept clusters with topics. To do this, 
-we need to create a vocabulary: 
+we need to create a vocabulary. We are going to feed our model with 50.000 nouns from the English 
+vocabulary: 
 
 ```python
-from sklearn.datasets import fetch_20newsgroups
-from sklearn.feature_extraction.text import TfidfVectorizer
-docs = fetch_20newsgroups(subset='all',  remove=('headers', 'footers', 'quotes'))['data']
-vectorizer = TfidfVectorizer(ngram_range=(1, 2)).fit(docs)
-words = vectorizer.get_feature_names()
-words = [words[index] for index in np.argpartition(vectorizer.idf_, -50_000)[-50_000:]]
+import random
+import nltk
+nltk.download("wordnet")
+from nltk.corpus import wordnet as wn
+
+all_nouns = [word for synset in wn.all_synsets('n') for word in synset.lemma_names() if "_" not in word]
+selected_nouns = random.sample(all_nouns, 50_000)
 ```
 
-Then, we can pass in the resulting `words` to **Concept**:
+Then, we can pass in the resulting `selected_nouns` to **Concept**:
 
 ```python
 from concept import ConceptModel
 
 concept_model = ConceptModel()
-concepts = concept_model.fit_transform(images, docs=words)
+concepts = concept_model.fit_transform(img_names, docs=selected_nouns)
 ```
 
 Again, the resulting concepts can be visualized. This time however, we can also see the generated topics 
@@ -90,4 +92,31 @@ through `concept_model.visualize_concepts()`:
 
 <img src="images/concepts.jpg" width="100%" height="100%" align="center" />
 
-**NOTE**: Use `Concept(embedding_model="clip-ViT-B-32-multilingual-v1")` to select a model that supports 50+ languages. 
+**NOTE**: Use `Concept(embedding_model="clip-ViT-B-32-multilingual-v1")` to select a model that supports 50+ languages.
+
+## Search Concepts
+We can quickly search for specific concepts by embedding a search term and finding the cluster embeddings 
+that best represent them. As an example, let us search for the term `beach` and see what we can find. 
+To do this, we simply run the following:
+
+```python
+>>> concept_model.find_concepts("beach")
+[(100, 0.277577825349102),
+ (53, 0.27431058773894657),
+ (95, 0.25973751319723837),
+ (77, 0.2560122597417548),
+ (97, 0.25361988261846297)]
+```
+
+Each tuple contains two values, the first is the concept cluster and the second the similarity to the 
+search term. The top 5 similar topics are returned. 
+
+Now, let us visualize those concepts to see how well the search function works:
+
+```python
+concept_model.visualize_concepts(concepts=[100, 53, 95, 77, 97])
+``` 
+
+<img src="images/search.jpg" width="100%" height="100%" align="center" />
+
+ 

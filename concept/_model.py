@@ -1,3 +1,4 @@
+import joblib
 import hdbscan
 import numpy as np
 import pandas as pd
@@ -80,16 +81,17 @@ class ConceptModel:
 
         self.frequency = None
         self.topics = None
+        self.cluster_embeddings = None
 
     def fit_transform(self,
-                      images: List[Image.Image],
+                      images: List[str],
                       docs: List[str] = None,
                       image_names: List[str] = None,
                       image_embeddings: np.ndarray = None) -> List[int]:
         """ Fit the model on a collection of images and return concepts
 
         Arguments:
-            images: A list of images to fit the model on
+            images: A list of paths to each image
             docs: The documents from which to extract textual concept representation
             image_names: The names of the images for easier
                          reading of concept clusters
@@ -118,10 +120,9 @@ class ConceptModel:
 
         # Extract representative images through exemplars
         representative_images = self._extract_exemplars(image_names)
-        cluster_embeddings, exemplar_embeddings = self._extract_cluster_embeddings(image_embeddings,
-                                                                                   representative_images)
-        selected_exemplars = self._extract_exemplar_subset(cluster_embeddings,
-                                                           exemplar_embeddings,
+        exemplar_embeddings = self._extract_cluster_embeddings(image_embeddings,
+                                                               representative_images)
+        selected_exemplars = self._extract_exemplar_subset(exemplar_embeddings,
                                                            representative_images)
 
         # Create collective representation of images
@@ -129,18 +130,18 @@ class ConceptModel:
 
         # Find the best words for each concept cluster
         if docs is not None:
-            self._extract_textual_representation(cluster_embeddings, docs)
+            self._extract_textual_representation(docs)
 
         return predictions
 
     def fit(self,
-            images: List[Image.Image],
+            images: List[str],
             image_names: List[str] = None,
             image_embeddings: np.ndarray = None):
         """ Fit the model on a collection of images and return concepts
 
         Arguments:
-            images: A list of images to fit the model on
+            images: A list of paths to each image
             image_names: The names of the images for easier
                          reading of concept clusters
             image_embeddings: Pre-trained image embeddings to use
@@ -182,7 +183,7 @@ class ConceptModel:
         return predictions
 
     def _embed_images(self,
-                      images: List[Image.Image]) -> np.ndarray:
+                      images: List[str]) -> np.ndarray:
         """ Embed the images
 
         Not entirely sure why but the RAM ramps up
@@ -192,14 +193,14 @@ class ConceptModel:
         images.
 
         Arguments:
-            images: A list of images
+            images: A list of paths to each image
 
         Returns:
             embeddings: The image embeddings
         """
         # Prepare images
         batch_size = 64
-        images_to_embed = [image.copy() for image in images]
+        images_to_embed = [Image.open(filepath) for filepath in images]
         nr_iterations = int(np.ceil(len(images_to_embed) / batch_size))
 
         # Embed images per batch
@@ -297,9 +298,7 @@ class ConceptModel:
                                     image_embeddings: np.ndarray,
                                     representative_images: Mapping[str,
                                                                    Mapping[str,
-                                                                           List[int]]]) -> Tuple[List[np.ndarray],
-                                                                                                 Mapping[str,
-                                                                                                         np.ndarray]]:
+                                                                           List[int]]]) -> Mapping[str, np.ndarray]:
         """ Create a concept cluster embedding for each concept cluster by
         averaging the exemplar embeddings for each concept cluster.
 
@@ -307,8 +306,10 @@ class ConceptModel:
             image_embeddings: All image embeddings
             representative_images: The representative images per concept cluster
 
-        Returns:
+        Updates:
             cluster_embeddings: The embeddings for each concept cluster
+
+        Returns:
             exemplar_embeddings: The embeddings for each exemplar image
         """
         exemplar_embeddings = {}
@@ -321,17 +322,17 @@ class ConceptModel:
             exemplar_embeddings[label] = embeddings
             cluster_embeddings.append(cluster_embedding)
 
-        return cluster_embeddings, exemplar_embeddings
+        self.cluster_embeddings = cluster_embeddings
+
+        return exemplar_embeddings
 
     def _extract_exemplar_subset(self,
-                                 cluster_embeddings: List[np.ndarray],
                                  exemplar_embeddings: Mapping[str, np.ndarray],
                                  representative_images: Mapping[str, Mapping[str,
                                                                              List[int]]]) -> Mapping[str, List[int]]:
         """ Use MMR to filter out images in the exemplar set
 
         Arguments:
-            cluster_embeddings: The embeddings for each concept cluster
             exemplar_embeddings: The embeddings for each exemplar image
             representative_images: The representative images per concept cluster
 
@@ -339,7 +340,7 @@ class ConceptModel:
             selected_exemplars: A selection (8) of exemplar images for each concept cluster
         """
 
-        selected_exemplars = {cluster: mmr(cluster_embeddings[cluster],
+        selected_exemplars = {cluster: mmr(self.cluster_embeddings[cluster],
                                            exemplar_embeddings[cluster],
                                            representative_images[cluster]["Indices"],
                                            diversity=self.diversity,
@@ -349,15 +350,17 @@ class ConceptModel:
         return selected_exemplars
 
     def _cluster_representation(self,
-                                images: List[Image.Image],
+                                images: List[str],
                                 selected_exemplars: Mapping[str, List[int]]):
         """ Cluster exemplars into a single image per concept cluster
 
         Arguments:
-            images: A list of images
+            images: A list of paths to each image
             selected_exemplars: A selection of exemplar images for each concept cluster
         """
-        sliced_exemplars = {cluster: [[images[j]
+        pil_images = [Image.open(filepath) for filepath in images]
+
+        sliced_exemplars = {cluster: [[pil_images[j]
                                        for j in selected_exemplars[cluster][i:i + 3]]
                                       for i in range(0, len(selected_exemplars[cluster]), 3)]
                             for cluster in self.cluster_labels[1:]}
@@ -366,9 +369,17 @@ class ConceptModel:
                           for cluster in self.cluster_labels[1:]}
         self.cluster_images = cluster_images
 
+        # Properly close images
+        for image in pil_images:
+            image.close()
+
     def _extract_textual_representation(self,
-                                        cluster_embeddings,
                                         docs: List[str]):
+        """ Extract textual representation of concepts by comparing with documents
+
+        Arguments:
+            docs: A list of documents from which to extract words/tokens
+        """
 
         # Extract vocabulary from the documents
         self.vectorizer_model.fit(docs)
@@ -376,7 +387,7 @@ class ConceptModel:
 
         # Embed the documents and extract similarity between concept clusters and words
         text_embeddings = self.embedding_model.encode(words, show_progress_bar=True)
-        sim_matrix = cosine_similarity(np.array(cluster_embeddings)[:, 0, :], text_embeddings)
+        sim_matrix = cosine_similarity(np.array(self.cluster_embeddings)[:, 0, :], text_embeddings)
 
         # Extract most similar words for each concept cluster
         topics = {}
@@ -386,11 +397,34 @@ class ConceptModel:
 
         self.topics = topics
 
+    def find_concepts(self, search_term: str) -> List[Tuple[int, float]]:
+        """ Based on a search term, find the top 5 related concepts
+
+        Arguments:
+            search_term: The search term to search for
+
+        Returns:
+            results: The top 5 related concepts with their similarity scores
+
+        Usage:
+
+        ```python
+        results = concept_model.find_concepts(search_term="dog")
+        ```
+        """
+        embedding = self.embedding_model.encode(search_term)
+        sim_matrix = cosine_similarity(embedding.reshape(1, -1), np.array(self.cluster_embeddings)[:, 0, :])
+        related_concepts = np.argsort(sim_matrix)[0][::-1][:5]
+        vals = list(np.sort(sim_matrix)[0][::-1][:5])
+
+        results = [(concept, val) for concept, val in zip(related_concepts, vals)]
+        return results
+
     def visualize_concepts(self,
                            top_n: int = 9,
                            concepts: List[int] = None,
                            figsize: Tuple[int, int] = (20, 15)):
-        """ Visualize clusters using merged exemplars
+        """ Visualize concepts using merged exemplars
 
         Arguments:
             top_n: The top_n concepts to visualize
@@ -398,23 +432,68 @@ class ConceptModel:
             figsize: The size of the figure
         """
         if not concepts:
-            clusters = [self.frequency.index[index] for index in range(top_n)]
-            images = [self.cluster_images[index] for index in clusters]
+            concepts = [self.frequency.index[index] for index in range(top_n)]
+            images = [self.cluster_images[index] for index in concepts]
         else:
             images = [self.cluster_images[index] for index in concepts]
 
         nr_columns = 3 if len(images) >= 3 else len(images)
         nr_rows = int(np.ceil(len(concepts) / nr_columns))
 
-        _, axs = plt.subplots(nr_rows, nr_columns, figsize=figsize)
-        axs = axs.flatten()
-        for index, ax in enumerate(axs):
-            if index < len(images):
-                ax.imshow(images[index])
-                if self.topics:
-                    title = f"Concept {concepts[index]}: {self.topics[concepts[index]]}"
-                else:
-                    title = f"Concept {concepts[index]}"
-                ax.set_title(title)
-            ax.axis('off')
-        plt.show()
+        fig, axs = plt.subplots(nr_rows, nr_columns, figsize=figsize)
+
+        # visualize multiple concepts
+        if len(images) > 1:
+            axs = axs.flatten()
+            for index, ax in enumerate(axs):
+                if index < len(images):
+                    ax.imshow(images[index])
+                    if self.topics:
+                        title = f"Concept {concepts[index]}: \n{self.topics[concepts[index]]}"
+                    else:
+                        title = f"Concept {concepts[index]}"
+                    ax.set_title(title)
+                ax.axis('off')
+
+        # visualize a single concept
+        else:
+            axs.imshow(images[0])
+            if self.topics:
+                title = f"Concept {concepts[0]}: \n{self.topics[concepts[0]]}"
+            else:
+                title = f"Concept {concepts[0]}"
+            axs.set_title(title)
+            axs.axis('off')
+        return fig
+
+    def save(self,
+             path: str) -> None:
+        """ Saves the model to the specified path
+
+        Arguments:
+            path: the location and name of the file you want to save
+
+        Usage:
+        ```python
+        concept_model.save("my_model")
+        ```
+        """
+        with open(path, 'wb') as file:
+            joblib.dump(self, file)
+
+    @classmethod
+    def load(cls,
+             path: str):
+        """ Loads the model from the specified path
+
+        Arguments:
+            path: the location and name of the ConceptModel file you want to load
+
+        Usage:
+        ```python
+        ConceptModel.load("my_model")
+        ```
+        """
+        with open(path, 'rb') as file:
+            concept_model = joblib.load(file)
+            return concept_model

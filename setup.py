@@ -19,7 +19,8 @@ base_packages = [
     "scikit-learn>=0.22.2.post1",
     "tqdm>=4.41.1",
     "sentence-transformers==1.2.0",  # Temporarily until the Tokenizer gets updated
-    "pillow>=7.1.2"
+    "pillow>=7.1.2",
+    "ftfy>=6.0.3"
 ]
 
 dev_packages = docs_packages + test_packages
@@ -30,7 +31,7 @@ with open("README.md", "r") as fh:
 setup(
     name="concept",
     packages=find_packages(exclude=["notebooks", "docs"]),
-    version="0.1.0",
+    version="0.1.1",
     author="Maarten P. Grootendorst",
     author_email="maartengrootendorst@gmail.com",
     description="Topic Model Images",

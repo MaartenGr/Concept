@@ -1,4 +1,10 @@
-For those that are interested in the underpinnings of Concept, below is an abstract overview of the method used to create the resulting concepts:
+There are two variations of the Concept algorithm, one primarily using **cosine similarity** to find 
+words related to concept clusters and one using **c-TF-IDF** instead to find the related words to each concept cluster. 
+
+
+# Concept - Cosine Similarity
+
+For those that are interested in the underpinnings of Concept, below is an abstract overview of the method used to create the resulting concepts.
 
 <img src="algorithm.png" width="100%" height="100%"/>
 
@@ -22,3 +28,12 @@ This way, we can show as much of the concept as possible. The selected images ar
 Lastly, we take the textual embeddings and compare them with the created concept cluster embeddings. 
 Using cosine similarity, we select the embeddings that are most related to one another. 
 This introduces multimodality into the concept representation.
+
+# Concept - c-TF-IDF
+
+A second version of Concept can be found leverages c-TF-IDF to generate the concept representations. It 
+uses OpenAI's CLIP to find the top 10 best representing words for each image. That way, we can generate documents 
+for each image. Then, we group all words per concept cluster and finally run c-TF-IDF to find the best textual 
+representation of the concept clusters:
+
+<img src="algorithm_ctfidf.png" width="100%" height="100%"/>

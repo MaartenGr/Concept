@@ -75,7 +75,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#version-011" class="md-skip">
+        <a href="#version-020" class="md-skip">
           Skip to content
         </a>
       
@@ -325,6 +325,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-020" class="md-nav__link">
+    Version 0.2.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-011" class="md-nav__link">
     Version 0.1.1
   </a>
@@ -377,6 +384,13 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#version-020" class="md-nav__link">
+    Version 0.2.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#version-011" class="md-nav__link">
     Version 0.1.1
   </a>
@@ -416,7 +430,20 @@
                 
                   <h1>Changelog</h1>
                 
-                <h2 id="version-011"><strong>Version 0.1.1</strong><a class="headerlink" href="#version-011" title="Permanent link">&para;</a></h2>
+                <h2 id="version-020"><strong>Version 0.2.0</strong><a class="headerlink" href="#version-020" title="Permanent link">&para;</a></h2>
+<p><em>Release date:  2 November, 2021</em></p>
+<p>Added <strong>c-TF-IDF</strong> as an algorithm to extract textual representations from images.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">concept</span> <span class="kn">import</span> <span class="n">ConceptModel</span>
+
+<span class="n">concept_model</span> <span class="o">=</span> <span class="n">ConceptModel</span><span class="p">(</span><span class="n">ctfidf</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">concepts</span> <span class="o">=</span> <span class="n">concept_model</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">img_names</span><span class="p">,</span> <span class="n">docs</span><span class="o">=</span><span class="n">docs</span><span class="p">)</span>
+</code></pre></div>
+<p>From the textual and visual embeddings, we use cosine similarity to find the best matching words 
+for each image. Then, after clustering the images, we combine all words in a cluster into a single 
+documents. Finally, c-TF-IDF is used to find the best words for each concept cluster. </p>
+<p>The benefit of this method is that it takes the entire cluster structure into account when creating the 
+representations. This is not the case when we only consider words close to the concept embedding.</p>
+<h2 id="version-011"><strong>Version 0.1.1</strong><a class="headerlink" href="#version-011" title="Permanent link">&para;</a></h2>
 <p><em>Release date:  31 October, 2021</em></p>
 <ul>
 <li>Fix RAM issues</li>

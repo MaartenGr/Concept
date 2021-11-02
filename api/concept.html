@@ -547,7 +547,7 @@ using images and textually using topic representations.</p>
 
 
 <h2 id="concept._model.ConceptModel.__init__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_concept_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">diversity</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">embedding_model</span><span class="o">=</span><span class="s1">&#39;clip-ViT-B-32&#39;</span><span class="p">,</span> <span class="n">vectorizer_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">umap_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hdbscan_model</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_concept_size</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">diversity</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">embedding_model</span><span class="o">=</span><span class="s1">&#39;clip-ViT-B-32&#39;</span><span class="p">,</span> <span class="n">vectorizer_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">umap_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hdbscan_model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ctfidf</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
 
   <span class="doc doc-properties">
       <small class="doc doc-property doc-property-special"><code>special</code></small>
@@ -611,6 +611,12 @@ using images and textually using topic representations.</p>
         <td><p>Pass in a hdbscan.HDBSCAN model to be used instead of the default</p></td>
         <td><code>None</code></td>
       </tr>
+      <tr>
+        <td><code>ctfidf</code></td>
+        <td><code>bool</code></td>
+        <td><p>Whether to use c-TF-IDF to create the textual concept representation</p></td>
+        <td><code>False</code></td>
+      </tr>
   </tbody>
 </table>
         <details class="quote">
@@ -621,7 +627,8 @@ using images and textually using topic representations.</p>
              <span class="n">embedding_model</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;clip-ViT-B-32&quot;</span><span class="p">,</span>
              <span class="n">vectorizer_model</span><span class="p">:</span> <span class="n">CountVectorizer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
              <span class="n">umap_model</span><span class="p">:</span> <span class="n">UMAP</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-             <span class="n">hdbscan_model</span><span class="p">:</span> <span class="n">hdbscan</span><span class="o">.</span><span class="n">HDBSCAN</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+             <span class="n">hdbscan_model</span><span class="p">:</span> <span class="n">hdbscan</span><span class="o">.</span><span class="n">HDBSCAN</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+             <span class="n">ctfidf</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; Concept Model Initialization</span>
 
 <span class="sd">    Arguments:</span>
@@ -636,6 +643,7 @@ using images and textually using topic representations.</p>
 <span class="sd">        vectorizer_model: Pass in a CountVectorizer instead of the default</span>
 <span class="sd">        umap_model: Pass in a UMAP model to be used instead of the default</span>
 <span class="sd">        hdbscan_model: Pass in a hdbscan.HDBSCAN model to be used instead of the default</span>
+<span class="sd">        ctfidf: Whether to use c-TF-IDF to create the textual concept representation</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">diversity</span> <span class="o">=</span> <span class="n">diversity</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">min_concept_size</span> <span class="o">=</span> <span class="n">min_concept_size</span>
@@ -661,6 +669,7 @@ using images and textually using topic representations.</p>
     <span class="bp">self</span><span class="o">.</span><span class="n">frequency</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">topics</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">cluster_embeddings</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">ctfidf</span> <span class="o">=</span> <span class="n">ctfidf</span>
 </code></pre></div>
         </details>
     </div>
@@ -959,7 +968,10 @@ using images and textually using topic representations.</p>
 
     <span class="c1"># Find the best words for each concept cluster</span>
     <span class="k">if</span> <span class="n">docs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_extract_textual_representation</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">ctfidf</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extract_ctfidf_representation</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span> <span class="n">image_embeddings</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_extract_textual_representation</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">predictions</span>
 </code></pre></div>

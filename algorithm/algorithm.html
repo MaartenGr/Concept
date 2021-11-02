@@ -75,7 +75,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#1-embed-images-documents" class="md-skip">
+        <a href="#concept-cosine-similarity" class="md-skip">
           Skip to content
         </a>
       
@@ -239,6 +239,8 @@
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
       
       
+        
+      
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
           Algorithm
@@ -253,6 +255,8 @@
 <nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
+  
+    
   
   
     <label class="md-nav__title" for="__toc">
@@ -376,6 +380,8 @@
   
   
   
+    
+  
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
@@ -428,9 +434,10 @@
                   </a>
                 
                 
-                  <h1>Algorithm</h1>
-                
-                <p>For those that are interested in the underpinnings of Concept, below is an abstract overview of the method used to create the resulting concepts:</p>
+                <p>There are two variations of the Concept algorithm, one primarily using <strong>cosine similarity</strong> to find 
+words related to concept clusters and one using <strong>c-TF-IDF</strong> instead to find the related words to each concept cluster. </p>
+<h1 id="concept-cosine-similarity">Concept - Cosine Similarity<a class="headerlink" href="#concept-cosine-similarity" title="Permanent link">&para;</a></h1>
+<p>For those that are interested in the underpinnings of Concept, below is an abstract overview of the method used to create the resulting concepts.</p>
 <p><img src="algorithm.png" width="100%" height="100%"/></p>
 <h2 id="1-embed-images-documents">1. <strong>Embed Images &amp; Documents</strong><a class="headerlink" href="#1-embed-images-documents" title="Permanent link">&para;</a></h2>
 <p>We start by embedding both images and documents into the same vector space using OpenAI's CLIP model. 
@@ -448,6 +455,12 @@ This way, we can show as much of the concept as possible. The selected images ar
 <p>Lastly, we take the textual embeddings and compare them with the created concept cluster embeddings. 
 Using cosine similarity, we select the embeddings that are most related to one another. 
 This introduces multimodality into the concept representation.</p>
+<h1 id="concept-c-tf-idf">Concept - c-TF-IDF<a class="headerlink" href="#concept-c-tf-idf" title="Permanent link">&para;</a></h1>
+<p>A second version of Concept can be found leverages c-TF-IDF to generate the concept representations. It 
+uses OpenAI's CLIP to find the top 10 best representing words for each image. That way, we can generate documents 
+for each image. Then, we group all words per concept cluster and finally run c-TF-IDF to find the best textual 
+representation of the concept clusters:</p>
+<p><img src="algorithm_ctfidf.png" width="100%" height="100%"/></p>
                 
               
               

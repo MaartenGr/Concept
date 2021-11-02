@@ -460,7 +460,7 @@ class ConceptModel:
                           for word_index, score in zip(indices[index][::-1], scores[index][::-1])
                           ]
                   for index, label in enumerate(labels)}
-        self.topics = {label: ", ".join(values) for label, values in topics.items()}
+        self.topics = {label: ", ".join([word for word, _ in values]) for label, values in topics.items()}
 
     def find_concepts(self, search_term: str) -> List[Tuple[int, float]]:
         """ Based on a search term, find the top 5 related concepts

@@ -8,11 +8,13 @@ from tqdm import tqdm
 from typing import List, Mapping, Tuple
 from PIL import Image
 from umap import UMAP
+from scipy.sparse.csr import csr_matrix
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 
 from concept._mmr import mmr
+from concept._ctfidf import ClassTFIDF
 from concept._visualization import get_concat_tile_resize
 
 
@@ -42,7 +44,8 @@ class ConceptModel:
                  embedding_model: str = "clip-ViT-B-32",
                  vectorizer_model: CountVectorizer = None,
                  umap_model: UMAP = None,
-                 hdbscan_model: hdbscan.HDBSCAN = None):
+                 hdbscan_model: hdbscan.HDBSCAN = None,
+                 ctfidf: bool = False):
         """ Concept Model Initialization
 
         Arguments:
@@ -57,6 +60,7 @@ class ConceptModel:
             vectorizer_model: Pass in a CountVectorizer instead of the default
             umap_model: Pass in a UMAP model to be used instead of the default
             hdbscan_model: Pass in a hdbscan.HDBSCAN model to be used instead of the default
+            ctfidf: Whether to use c-TF-IDF to create the textual concept representation
         """
         self.diversity = diversity
         self.min_concept_size = min_concept_size
@@ -82,6 +86,7 @@ class ConceptModel:
         self.frequency = None
         self.topics = None
         self.cluster_embeddings = None
+        self.ctfidf = ctfidf
 
     def fit_transform(self,
                       images: List[str],
@@ -130,7 +135,10 @@ class ConceptModel:
 
         # Find the best words for each concept cluster
         if docs is not None:
-            self._extract_textual_representation(docs)
+            if self.ctfidf:
+                self._extract_ctfidf_representation(docs, image_embeddings)
+            else:
+                self._extract_textual_representation(docs)
 
         return predictions
 
@@ -397,6 +405,63 @@ class ConceptModel:
 
         self.topics = topics
 
+    def _extract_ctfidf_representation(self,
+                                       docs: List[str],
+                                       image_embeddings: np.ndarray):
+        """ Extract textual representation through c-TF-IDF
+
+        For each image, generate 10 related words. Then, combine the words
+        of each image in a cluster and run c-TF-IDF over all clusters.
+
+        Arguments:
+            docs: The documents from which to extract the words
+            image_embeddings: All image embeddings
+        """
+        # Extract vocabulary from the documents
+        self.vectorizer_model.fit(docs)
+        words = self.vectorizer_model.get_feature_names()
+
+        # Embed the documents and extract similarity between concept clusters and words
+        text_embeddings = self.embedding_model.encode(words, show_progress_bar=True)
+        sim_matrix = cosine_similarity(image_embeddings, text_embeddings)
+
+        # Extract most similar words for each concept cluster
+        image_words = []
+        for index in tqdm(range(sim_matrix.shape[0])):
+            indices = np.argpartition(sim_matrix[index], -20)[-20:]
+            selected_words = " ".join([words[index] for index in indices])
+            image_words.append(selected_words)
+
+        df = pd.DataFrame({"Words": image_words, "Concept": list(self.hdbscan_model.labels_)})
+        documents_per_concept = df.groupby(['Concept'], as_index=False).agg({'Words': ' '.join})
+
+        # Extract c-TF-IDF representation
+        m = len(df)
+        documents = documents_per_concept.Words.tolist()
+        self.vectorizer_model.fit(documents)
+        selected_words = self.vectorizer_model.get_feature_names()
+        X = self.vectorizer_model.transform(documents)
+
+        transformer = ClassTFIDF().fit(X, n_samples=m, multiplier=None)
+        c_tf_idf = transformer.transform(X)
+        labels = sorted(list(set(list(self.hdbscan_model.labels_))))
+
+        # Get the top 10 indices and values per row in a sparse c-TF-IDF matrix
+        indices = self._top_n_idx_sparse(c_tf_idf, 10)
+        scores = self._top_n_values_sparse(c_tf_idf, indices)
+        sorted_indices = np.argsort(scores, 1)
+        indices = np.take_along_axis(indices, sorted_indices, axis=1)
+        scores = np.take_along_axis(scores, sorted_indices, axis=1)
+
+        # Get top 30 words per topic based on c-TF-IDF score
+        topics = {label: [(selected_words[word_index], score)
+                          if word_index and score > 0
+                          else ("", 0.00001)
+                          for word_index, score in zip(indices[index][::-1], scores[index][::-1])
+                          ]
+                  for index, label in enumerate(labels)}
+        self.topics = {label: ", ".join(values) for label, values in topics.items()}
+
     def find_concepts(self, search_term: str) -> List[Tuple[int, float]]:
         """ Based on a search term, find the top 5 related concepts
 
@@ -497,3 +562,37 @@ class ConceptModel:
         with open(path, 'rb') as file:
             concept_model = joblib.load(file)
             return concept_model
+
+    @staticmethod
+    def _top_n_idx_sparse(matrix: csr_matrix, n: int) -> np.ndarray:
+        """ Return indices of top n values in each row of a sparse matrix
+        Retrieved from:
+            https://stackoverflow.com/questions/49207275/finding-the-top-n-values-in-a-row-of-a-scipy-sparse-matrix
+        Args:
+            matrix: The sparse matrix from which to get the top n indices per row
+            n: The number of highest values to extract from each row
+        Returns:
+            indices: The top n indices per row
+        """
+        indices = []
+        for le, ri in zip(matrix.indptr[:-1], matrix.indptr[1:]):
+            n_row_pick = min(n, ri - le)
+            values = matrix.indices[le + np.argpartition(matrix.data[le:ri], -n_row_pick)[-n_row_pick:]]
+            values = [values[index] if len(values) >= index + 1 else None for index in range(n)]
+            indices.append(values)
+        return np.array(indices)
+
+    @staticmethod
+    def _top_n_values_sparse(matrix: csr_matrix, indices: np.ndarray) -> np.ndarray:
+        """ Return the top n values for each row in a sparse matrix
+        Args:
+            matrix: The sparse matrix from which to get the top n indices per row
+            indices: The top n indices per row
+        Returns:
+            top_values: The top n scores per row
+        """
+        top_values = []
+        for row, values in enumerate(indices):
+            scores = np.array([matrix[row, value] if value is not None else 0 for value in values])
+            top_values.append(scores)
+        return np.array(top_values)

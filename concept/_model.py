@@ -447,7 +447,7 @@ class ConceptModel:
         labels = sorted(list(set(list(self.hdbscan_model.labels_))))
 
         # Get the top 10 indices and values per row in a sparse c-TF-IDF matrix
-        indices = self._top_n_idx_sparse(c_tf_idf, 10)
+        indices = self._top_n_idx_sparse(c_tf_idf, 5)
         scores = self._top_n_values_sparse(c_tf_idf, indices)
         sorted_indices = np.argsort(scores, 1)
         indices = np.take_along_axis(indices, sorted_indices, axis=1)

@@ -1,3 +1,22 @@
+## **Version 0.2.0**
+*Release date:  2 November, 2021*
+
+Added **c-TF-IDF** as an algorithm to extract textual representations from images.
+
+```python
+from concept import ConceptModel
+
+concept_model = ConceptModel(ctfidf=True)
+concepts = concept_model.fit_transform(img_names, docs=docs)
+```
+
+From the textual and visual embeddings, we use cosine similarity to find the best matching words 
+for each image. Then, after clustering the images, we combine all words in a cluster into a single 
+documents. Finally, c-TF-IDF is used to find the best words for each concept cluster. 
+
+The benefit of this method is that it takes the entire cluster structure into account when creating the 
+representations. This is not the case when we only consider words close to the concept embedding.
+
 ## **Version 0.1.1**
 *Release date:  31 October, 2021*
 

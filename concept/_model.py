@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
-from typing import List, Mapping, Tuple
+from typing import List, Mapping, Tuple, Union
 from PIL import Image
 from umap import UMAP
 from scipy.sparse.csr import csr_matrix
@@ -166,7 +166,9 @@ class ConceptModel:
         self.fit_transform(images, image_names=image_names, image_embeddings=image_embeddings)
         return self
 
-    def transform(self, images, image_embeddings=None):
+    def transform(self, 
+                  images: Union[List[str], str], 
+                  image_embeddings: np.ndarray = None):
         """ After having fit a model, use transform to predict new instances
 
         Arguments:
@@ -183,7 +185,9 @@ class ConceptModel:
         new_concepts = concept_model.transform(new_images)
         ```
         """
-        if image_embeddings is not None:
+        if image_embeddings is None:
+            if isinstance(images, str):
+                images = [images]
             image_embeddings = self._embed_images(images)
 
         umap_embeddings = self.umap_model.transform(image_embeddings)
@@ -207,21 +211,21 @@ class ConceptModel:
             embeddings: The image embeddings
         """
         # Prepare images
-        batch_size = 64
-        images_to_embed = [Image.open(filepath) for filepath in images]
-        nr_iterations = int(np.ceil(len(images_to_embed) / batch_size))
+        batch_size = 128
+        nr_iterations = int(np.ceil(len(images) / batch_size))
 
         # Embed images per batch
         embeddings = []
         for i in tqdm(range(nr_iterations)):
             start_index = i * batch_size
             end_index = (i * batch_size) + batch_size
-            img_emb = self.embedding_model.encode(images_to_embed[start_index:end_index],
-                                                  show_progress_bar=False)
+
+            images_to_embed = [Image.open(filepath) for filepath in images[start_index:end_index]]
+            img_emb = self.embedding_model.encode(images_to_embed, show_progress_bar=False)
             embeddings.extend(img_emb.tolist())
 
-            # If images within e
-            for image in images_to_embed[start_index:end_index]:
+            # Close images
+            for image in images_to_embed:
                 image.close()
 
         return np.array(embeddings)
@@ -366,20 +370,24 @@ class ConceptModel:
             images: A list of paths to each image
             selected_exemplars: A selection of exemplar images for each concept cluster
         """
-        pil_images = [Image.open(filepath) for filepath in images]
-
-        sliced_exemplars = {cluster: [[pil_images[j]
-                                       for j in selected_exemplars[cluster][i:i + 3]]
+        # Find indices of exemplars per cluster
+        sliced_exemplars = {cluster: [[j for j in selected_exemplars[cluster][i:i + 3]]
                                       for i in range(0, len(selected_exemplars[cluster]), 3)]
                             for cluster in self.cluster_labels[1:]}
+        
+        # combine exemplars into a single image
+        cluster_images = {}
+        for cluster in self.cluster_labels[1:]:
+            images_to_cluster = [[Image.open(images[index]) for index in sub_indices] for sub_indices in sliced_exemplars[cluster]]
+            cluster_image = get_concat_tile_resize(images_to_cluster)
+            cluster_images[cluster] = cluster_image
 
-        cluster_images = {cluster: get_concat_tile_resize(sliced_exemplars[cluster])
-                          for cluster in self.cluster_labels[1:]}
+            # Make sure to properly close images
+            for image_list in images_to_cluster:
+                for image in image_list:
+                    image.close()
+
         self.cluster_images = cluster_images
-
-        # Properly close images
-        for image in pil_images:
-            image.close()
 
     def _extract_textual_representation(self,
                                         docs: List[str]):

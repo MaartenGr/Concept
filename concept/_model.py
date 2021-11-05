@@ -5,7 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
-from typing import List, Mapping, Tuple
+from typing import List, Mapping, Tuple, Union
 from PIL import Image
 from umap import UMAP
 from scipy.sparse.csr import csr_matrix
@@ -166,7 +166,9 @@ class ConceptModel:
         self.fit_transform(images, image_names=image_names, image_embeddings=image_embeddings)
         return self
 
-    def transform(self, images, image_embeddings=None):
+    def transform(self, 
+                  images: Union[List[str], str], 
+                  image_embeddings: np.ndarray = None):
         """ After having fit a model, use transform to predict new instances
 
         Arguments:
@@ -183,7 +185,9 @@ class ConceptModel:
         new_concepts = concept_model.transform(new_images)
         ```
         """
-        if image_embeddings is not None:
+        if image_embeddings is None:
+            if isinstance(images, str):
+                images = [images]
             image_embeddings = self._embed_images(images)
 
         umap_embeddings = self.umap_model.transform(image_embeddings)

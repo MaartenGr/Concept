@@ -379,8 +379,9 @@ class ConceptModel:
             cluster_images[cluster] = cluster_image
 
             # Make sure to properly close images
-            for image in images_to_cluster:
-                image.close()
+            for image_list in images_to_cluster:
+                for image in image_list:
+                    image.close()
 
         self.cluster_images = cluster_images
 

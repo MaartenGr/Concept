@@ -1134,13 +1134,13 @@ using images and textually using topic representations.</p>
   <tbody>
       <tr>
         <td><code>images</code></td>
-        <td></td>
+        <td><code>Union[List[str], str]</code></td>
         <td><p>A single images or a list of images to predict</p></td>
         <td><em>required</em></td>
       </tr>
       <tr>
         <td><code>image_embeddings</code></td>
-        <td></td>
+        <td><code>ndarray</code></td>
         <td><p>Pre-trained image embeddings. These can be used
               instead of the sentence-transformer model.</p></td>
         <td><code>None</code></td>
@@ -1169,7 +1169,9 @@ using images and textually using topic representations.</p>
 
         <details class="quote">
           <summary>Source code in <code>concept\_model.py</code></summary>
-          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">images</span><span class="p">,</span> <span class="n">image_embeddings</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+              <span class="n">images</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">],</span> 
+              <span class="n">image_embeddings</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot; After having fit a model, use transform to predict new instances</span>
 
 <span class="sd">    Arguments:</span>
@@ -1186,7 +1188,9 @@ using images and textually using topic representations.</p>
 <span class="sd">    new_concepts = concept_model.transform(new_images)</span>
 <span class="sd">    ```</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">image_embeddings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">image_embeddings</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">images</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">images</span> <span class="o">=</span> <span class="p">[</span><span class="n">images</span><span class="p">]</span>
         <span class="n">image_embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_embed_images</span><span class="p">(</span><span class="n">images</span><span class="p">)</span>
 
     <span class="n">umap_embeddings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">umap_model</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">image_embeddings</span><span class="p">)</span>

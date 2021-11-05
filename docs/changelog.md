@@ -2,6 +2,7 @@
 *Release date:  5 November, 2021*
 
 * Fixed issue when loading in more than 40.000 images
+* Fixed `transform` only working with pre-trained embeddings
 
 
 ## **Version 0.2.0**

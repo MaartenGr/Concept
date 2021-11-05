@@ -207,21 +207,21 @@ class ConceptModel:
             embeddings: The image embeddings
         """
         # Prepare images
-        batch_size = 64
-        images_to_embed = [Image.open(filepath) for filepath in images]
-        nr_iterations = int(np.ceil(len(images_to_embed) / batch_size))
+        batch_size = 128
+        nr_iterations = int(np.ceil(len(images) / batch_size))
 
         # Embed images per batch
         embeddings = []
         for i in tqdm(range(nr_iterations)):
             start_index = i * batch_size
             end_index = (i * batch_size) + batch_size
-            img_emb = self.embedding_model.encode(images_to_embed[start_index:end_index],
-                                                  show_progress_bar=False)
+
+            images_to_embed = [Image.open(filepath) for filepath in images[start_index:end_index]]
+            img_emb = self.embedding_model.encode(images_to_embed, show_progress_bar=False)
             embeddings.extend(img_emb.tolist())
 
-            # If images within e
-            for image in images_to_embed[start_index:end_index]:
+            # Close images
+            for image in images_to_embed:
                 image.close()
 
         return np.array(embeddings)
@@ -366,20 +366,23 @@ class ConceptModel:
             images: A list of paths to each image
             selected_exemplars: A selection of exemplar images for each concept cluster
         """
-        pil_images = [Image.open(filepath) for filepath in images]
-
-        sliced_exemplars = {cluster: [[pil_images[j]
-                                       for j in selected_exemplars[cluster][i:i + 3]]
+        # Find indices of exemplars per cluster
+        sliced_exemplars = {cluster: [[j for j in selected_exemplars[cluster][i:i + 3]]
                                       for i in range(0, len(selected_exemplars[cluster]), 3)]
                             for cluster in self.cluster_labels[1:]}
+        
+        # combine exemplars into a single image
+        cluster_images = {}
+        for cluster in self.cluster_labels[1:]:
+            images_to_cluster = [[Image.open(images[index]) for index in sub_indices] for sub_indices in sliced_exemplars[cluster]]
+            cluster_image = get_concat_tile_resize(images_to_cluster)
+            cluster_images[cluster] = cluster_image
 
-        cluster_images = {cluster: get_concat_tile_resize(sliced_exemplars[cluster])
-                          for cluster in self.cluster_labels[1:]}
+            # Make sure to properly close images
+            for image in images_to_cluster:
+                image.close()
+
         self.cluster_images = cluster_images
-
-        # Properly close images
-        for image in pil_images:
-            image.close()
 
     def _extract_textual_representation(self,
                                         docs: List[str]):

@@ -261,7 +261,7 @@ class ConceptModel:
             pd.DataFrame({"Cluster": predicted_clusters, "Count": predicted_clusters})
               .groupby("Cluster")
               .count()
-              .drop(-1)
+              .drop(-1, errors="ignore")
               .sort_values("Count", ascending=False)
         )
         return predicted_clusters

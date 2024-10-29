@@ -399,7 +399,7 @@ class ConceptModel:
 
         # Extract vocabulary from the documents
         self.vectorizer_model.fit(docs)
-        words = self.vectorizer_model.get_feature_names()
+        words = self.vectorizer_model.get_feature_names_out()
 
         # Embed the documents and extract similarity between concept clusters and words
         text_embeddings = self.embedding_model.encode(words, show_progress_bar=True)
@@ -427,7 +427,7 @@ class ConceptModel:
         """
         # Extract vocabulary from the documents
         self.vectorizer_model.fit(docs)
-        words = self.vectorizer_model.get_feature_names()
+        words = self.vectorizer_model.get_feature_names_out()
 
         # Embed the documents and extract similarity between concept clusters and words
         text_embeddings = self.embedding_model.encode(words, show_progress_bar=True)
@@ -447,7 +447,7 @@ class ConceptModel:
         m = len(df)
         documents = documents_per_concept.Words.tolist()
         self.vectorizer_model.fit(documents)
-        selected_words = self.vectorizer_model.get_feature_names()
+        selected_words = self.vectorizer_model.get_feature_names_out()
         X = self.vectorizer_model.transform(documents)
 
         transformer = ClassTFIDF().fit(X, n_samples=m, multiplier=None)

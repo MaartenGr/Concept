@@ -5,6 +5,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from tqdm import tqdm
+from packaging import version
 from typing import List, Mapping, Tuple, Union
 from PIL import Image
 from umap import UMAP
@@ -12,6 +13,7 @@ from scipy.sparse.csr import csr_matrix
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn import __version__ as sklearn_version
 
 from concept._mmr import mmr
 from concept._ctfidf import ClassTFIDF
@@ -399,7 +401,13 @@ class ConceptModel:
 
         # Extract vocabulary from the documents
         self.vectorizer_model.fit(docs)
-        words = self.vectorizer_model.get_feature_names()
+
+        # Scikit-Learn Deprecation: get_feature_names is deprecated in 1.0
+        # and will be removed in 1.2. Please use get_feature_names_out instead.
+        if version.parse(sklearn_version) >= version.parse("1.0.0"):
+            words = self.vectorizer_model.get_feature_names_out()
+        else:
+            words = self.vectorizer_model.get_feature_names()
 
         # Embed the documents and extract similarity between concept clusters and words
         text_embeddings = self.embedding_model.encode(words, show_progress_bar=True)
@@ -427,7 +435,13 @@ class ConceptModel:
         """
         # Extract vocabulary from the documents
         self.vectorizer_model.fit(docs)
-        words = self.vectorizer_model.get_feature_names()
+
+        # Scikit-Learn Deprecation: get_feature_names is deprecated in 1.0
+        # and will be removed in 1.2. Please use get_feature_names_out instead.
+        if version.parse(sklearn_version) >= version.parse("1.0.0"):
+            words = self.vectorizer_model.get_feature_names_out()
+        else:
+            words = self.vectorizer_model.get_feature_names()
 
         # Embed the documents and extract similarity between concept clusters and words
         text_embeddings = self.embedding_model.encode(words, show_progress_bar=True)
@@ -447,7 +461,12 @@ class ConceptModel:
         m = len(df)
         documents = documents_per_concept.Words.tolist()
         self.vectorizer_model.fit(documents)
-        selected_words = self.vectorizer_model.get_feature_names()
+        # Scikit-Learn Deprecation: get_feature_names is deprecated in 1.0
+        # and will be removed in 1.2. Please use get_feature_names_out instead.
+        if version.parse(sklearn_version) >= version.parse("1.0.0"):
+            words = self.vectorizer_model.get_feature_names_out()
+        else:
+            words = self.vectorizer_model.get_feature_names()
         X = self.vectorizer_model.transform(documents)
 
         transformer = ClassTFIDF().fit(X, n_samples=m, multiplier=None)
